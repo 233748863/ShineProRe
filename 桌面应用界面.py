@@ -6,7 +6,7 @@ import threading
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QPushButton, QFrame, QSystemTrayIcon, 
                              QMenu, QMessageBox, QGridLayout, QGraphicsDropShadowEffect)
-from PyQt6.QtGui import QAction, QFont, QColor, QCursor
+from PyQt6.QtGui import QAction, QColor, QCursor
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
 
 class GameScriptUI(QMainWindow):

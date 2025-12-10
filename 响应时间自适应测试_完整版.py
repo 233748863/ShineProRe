@@ -14,7 +14,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from 技能循环引擎 import 技能循环引擎
-from typing import List, Dict, Any
 
 class 响应时间自适应测试器:
     """完整的响应时间自适应调整测试器"""

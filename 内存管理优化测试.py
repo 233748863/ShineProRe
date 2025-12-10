@@ -5,9 +5,8 @@
 """
 import time
 import gc
-import threading
 from utils.内存管理 import 内存监控器, 获取内存统计, 强制内存清理
-from utils.统一缓存管理器 import 统一缓存管理器, 生成全局缓存报告
+from utils.统一缓存管理器 import 统一缓存管理器
 
 
 def 测试智能GC调度():
