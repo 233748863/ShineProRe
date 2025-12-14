@@ -7,6 +7,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from utils.时间戳优化器 import 获取优化时间
 
+# 避免循环引用，使用 TYPE_CHECKING
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from core.状态监测器 import 状态监测器
+
 
 class 循环模式(Enum):
     """技能循环模式枚举"""
@@ -40,12 +45,14 @@ class 技能策略接口(Protocol):
 class 策略上下文:
     """策略执行上下文（性能优化版）"""
     
-    def __init__(self, 技能状态检测器: Any, 图像获取接口: Any, 技能字典: Dict[str, Any], 
-                气劲字典: Dict[str, Any], 蓝条配置: Dict[str, Any], 
-                检测区域: Tuple[int, int, int, int], 七情和合状态: int) -> None:
+    def __init__(self, 技能状态检测器: Any, 图像获取接口: Any, 状态监测器: Any, 
+                技能字典: Dict[str, Any], 气劲字典: Dict[str, Any], 蓝条配置: Dict[str, Any], 
+                检测区域: Tuple[int, int, int, int], 七情和合状态: int,
+                目标状态配置: Optional[Dict[str, Any]] = None) -> None:
         # 使用弱引用避免循环引用
         self.技能状态检测器 = 技能状态检测器
         self.图像获取接口 = 图像获取接口
+        self.状态监测器 = 状态监测器
         
         # 懒加载数据：仅在需要时创建副本
         self._技能字典 = 技能字典
@@ -53,11 +60,17 @@ class 策略上下文:
         self._蓝条配置 = 蓝条配置
         self.检测区域 = 检测区域
         self.七情和合状态 = 七情和合状态
+        self.目标状态配置 = 目标状态配置 or {}
         
         # 缓存图像，避免重复获取
         self._缓存图像 = None
         self._缓存时间 = 0
         self.缓存有效期 = 0.05  # 优化：缩短到50毫秒
+        
+        # 缓存目标状态
+        self._目标HP = None
+        self._目标Buffs = None
+        self._目标Debuffs = None
         
         # 性能优化：懒加载数据副本
         self._技能字典副本 = None
@@ -121,6 +134,49 @@ class 策略上下文:
         self._图像获取次数 = 0
         self._字典访问次数 = 0
 
+    @property
+    def 目标HP(self) -> float:
+        """获取目标HP百分比（懒加载）"""
+        if self._目标HP is None:
+            血条区域 = self.目标状态配置.get("血条区域")
+            颜色阈值 = self.目标状态配置.get("血条颜色阈值")
+            if hasattr(self.状态监测器, '获取目标HP百分比'):
+                self._目标HP = self.状态监测器.获取目标HP百分比(血条区域, 颜色阈值)
+            else:
+                self._目标HP = 1.0 # 默认满血
+        return self._目标HP
+
+    @property
+    def 目标Buffs(self) -> List[str]:
+        """获取目标Buff列表（懒加载）"""
+        if self._目标Buffs is None:
+            Buff区域 = self.目标状态配置.get("Buff区域")
+            Buff名称列表 = self.目标状态配置.get("关注Buff列表", [])
+            模板路径字典 = self.目标状态配置.get("Buff模板路径", {})
+            if hasattr(self.状态监测器, '检测Buff状态'):
+                self._目标Buffs = self.状态监测器.检测Buff状态(Buff区域, Buff名称列表, 模板路径字典)
+            else:
+                self._目标Buffs = []
+        return self._目标Buffs
+
+    @property
+    def 目标Debuffs(self) -> List[str]:
+        """获取目标Debuff列表（懒加载）"""
+        if self._目标Debuffs is None:
+            Debuff区域 = self.目标状态配置.get("Debuff区域")
+            Debuff名称列表 = self.目标状态配置.get("关注Debuff列表", [])
+            模板路径字典 = self.目标状态配置.get("Debuff模板路径", {})
+            if hasattr(self.状态监测器, '检测Debuff状态'):
+                self._目标Debuffs = self.状态监测器.检测Debuff状态(Debuff区域, Debuff名称列表, 模板路径字典)
+            else:
+                self._目标Debuffs = []
+        return self._目标Debuffs
+
+    @property
+    def 可驱散Debuff列表(self) -> List[str]:
+        """获取可驱散Debuff列表"""
+        return self.目标状态配置.get("可驱散Debuff列表", [])
+
 
 class 抽象策略(ABC):
     """抽象策略基类"""
@@ -170,6 +226,12 @@ class 默认循环策略(抽象策略):
         
         # 千枝气劲开启时的逻辑
         if 千枝开启 == 1:
+            # 优先处理危急血量 (HP < 30%)
+            if 上下文.目标HP is not None and 上下文.目标HP < 0.3:
+                键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 上下文.技能字典.get("当归四逆"))
+                if 键值 > 0:
+                    return 键值
+
             if 上下文.七情和合状态 == 1:
                 # 判断七情气劲是否开启
                 七情开启 = 上下文.技能状态检测器.判断气劲状态(图片, 上下文.气劲字典.get("七情状态"))
@@ -192,6 +254,12 @@ class 默认循环策略(抽象策略):
         
         # 千枝气劲关闭时的逻辑
         else:
+            # 优先处理危急血量 (HP < 30%)
+            if 上下文.目标HP is not None and 上下文.目标HP < 0.3:
+                键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 上下文.技能字典.get("当归四逆"))
+                if 键值 > 0:
+                    return 键值
+
             if 上下文.七情和合状态 == 1:
                 七情开启 = 上下文.技能状态检测器.判断气劲状态(图片, 上下文.气劲字典.get("七情状态"))
                 if 七情开启 == 0:
@@ -207,6 +275,17 @@ class 默认循环策略(抽象策略):
                 else:
                     上下文.七情和合状态 = 0
         
+        # 驱散逻辑：检测目标是否有可驱散Debuff
+        if 键值 == 0 and 上下文.目标Debuffs:
+            for debuff in 上下文.目标Debuffs:
+                if debuff in 上下文.可驱散Debuff列表:
+                    # 尝试获取 "驱散技能" 或 "清风垂露"
+                    驱散技能配置 = 上下文.技能字典.get("驱散技能") or 上下文.技能字典.get("清风垂露")
+                    if 驱散技能配置:
+                        键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 驱散技能配置)
+                        if 键值 > 0:
+                            return 键值
+
         # 通用技能优先级顺序
         if 键值 == 0:
             键值 = 上下文.技能状态检测器.判断素柯技能可用性(
@@ -267,6 +346,12 @@ class 驱散循环策略(抽象策略):
         
         # 千枝气劲开启时的逻辑
         if 千枝开启 == 1:
+            # 优先处理危急血量 (HP < 30%)
+            if 上下文.目标HP is not None and 上下文.目标HP < 0.3:
+                键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 上下文.技能字典.get("当归四逆"))
+                if 键值 > 0:
+                    return 键值
+
             if 上下文.七情和合状态 == 1:
                 七情开启 = 上下文.技能状态检测器.判断气劲状态(图片, 上下文.气劲字典.get("七情状态"))
                 if 七情开启 == 0:
@@ -286,6 +371,12 @@ class 驱散循环策略(抽象策略):
         
         # 千枝气劲关闭时的逻辑
         else:
+            # 优先处理危急血量 (HP < 30%)
+            if 上下文.目标HP is not None and 上下文.目标HP < 0.3:
+                键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 上下文.技能字典.get("当归四逆"))
+                if 键值 > 0:
+                    return 键值
+
             if 上下文.七情和合状态 == 1:
                 七情开启 = 上下文.技能状态检测器.判断气劲状态(图片, 上下文.气劲字典.get("七情状态"))
                 if 七情开启 == 0:
@@ -301,6 +392,17 @@ class 驱散循环策略(抽象策略):
                 else:
                     上下文.七情和合状态 = 0
         
+        # 驱散逻辑：检测目标是否有可驱散Debuff
+        if 键值 == 0 and 上下文.目标Debuffs:
+            for debuff in 上下文.目标Debuffs:
+                if debuff in 上下文.可驱散Debuff列表:
+                    # 尝试获取 "驱散技能" 或 "清风垂露"
+                    驱散技能配置 = 上下文.技能字典.get("驱散技能") or 上下文.技能字典.get("清风垂露")
+                    if 驱散技能配置:
+                        键值 = 上下文.技能状态检测器.判断普通技能可用性(图片, 驱散技能配置)
+                        if 键值 > 0:
+                            return 键值
+
         # 驱散模式下的技能优先级
         if 键值 == 0:
             键值 = 上下文.技能状态检测器.判断素柯技能可用性(

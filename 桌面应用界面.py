@@ -5,9 +5,105 @@ import sys
 import threading
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QPushButton, QFrame, QSystemTrayIcon, 
-                             QMenu, QMessageBox, QGridLayout, QGraphicsDropShadowEffect)
+                             QMenu, QMessageBox, QGridLayout, QGraphicsDropShadowEffect, QDialog)
 from PyQt6.QtGui import QAction, QColor, QCursor
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QPoint
+
+class CustomExitDialog(QDialog):
+    """自定义退出确认框"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setFixedSize(320, 180)
+        self.drag_pos = None
+        
+        # 主布局
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        
+        # 背景容器
+        container = QFrame()
+        container.setObjectName("DialogContainer")
+        container.setStyleSheet("""
+            QFrame#DialogContainer {
+                background-color: #1E1E2E;
+                border: 1px solid #303040;
+                border-radius: 12px;
+            }
+            QLabel { color: #F8F8F2; font-family: 'Microsoft YaHei'; }
+        """)
+        
+        # 添加阴影
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 150))
+        container.setGraphicsEffect(shadow)
+        
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # 标题栏
+        title_label = QLabel("确认退出")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #FF5555;")
+        container_layout.addWidget(title_label)
+        
+        # 内容
+        content_label = QLabel("你确定要退出游戏脚本吗？")
+        content_label.setStyleSheet("font-size: 14px; margin-top: 10px; margin-bottom: 20px;")
+        content_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        container_layout.addWidget(content_label)
+        
+        # 按钮组
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(15)
+        
+        cancel_btn = QPushButton("取消")
+        cancel_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #44475A;
+                color: #F8F8F2;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover { background-color: #6272A4; }
+        """)
+        cancel_btn.clicked.connect(self.reject)
+        
+        confirm_btn = QPushButton("确定退出")
+        confirm_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        confirm_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FF5555;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover { background-color: #FF6E6E; }
+        """)
+        confirm_btn.clicked.connect(self.accept)
+        
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(confirm_btn)
+        container_layout.addLayout(btn_layout)
+        
+        layout.addWidget(container)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and self.drag_pos:
+            self.move(event.globalPosition().toPoint() - self.drag_pos)
+            event.accept()
 
 class GameScriptUI(QMainWindow):
     """现代暗黑风格游戏脚本界面"""
@@ -143,7 +239,7 @@ class GameScriptUI(QMainWindow):
         self.main_switch_button.setFixedHeight(45)
         self.main_switch_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.main_switch_button.clicked.connect(self.toggle_running_state) 
-
+        
         self.pause_button = QPushButton("暂停")
         self.pause_button.setObjectName("BtnPause")
         # 修复点：添加属性用于CSS判断暂停状态
@@ -524,21 +620,8 @@ class GameScriptUI(QMainWindow):
 
     def safe_exit(self): 
         """使用自定义风格的退出确认框"""
-        
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("确认退出")
-        msg_box.setText("你确定要退出游戏脚本吗？")
-        msg_box.setIcon(QMessageBox.Icon.Question)
-        
-        msg_box.setStyleSheet(self.get_message_box_style()) 
-        
-        yes_button = msg_box.addButton("确定退出", QMessageBox.ButtonRole.YesRole)
-        no_button = msg_box.addButton("取消", QMessageBox.ButtonRole.NoRole)
-        msg_box.setDefaultButton(no_button) 
-
-        msg_box.exec()
-        
-        if msg_box.clickedButton() == yes_button:
+        dialog = CustomExitDialog(self)
+        if dialog.exec():
             if hasattr(self.engine, 'stop'): self.engine.stop()
             QApplication.quit()
     
@@ -592,7 +675,17 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
-    engine = TestEngine()
+    # 使用真实的技能循环引擎
+    try:
+        from core.技能循环引擎 import 技能循环引擎
+        engine = 技能循环引擎()
+        print("✅ 技能循环引擎加载成功")
+    except Exception as e:
+        print(f"❌ 技能循环引擎加载失败: {e}")
+        import traceback
+        traceback.print_exc()
+        # 降级到测试引擎以便界面仍能启动
+        engine = TestEngine()
     ui = GameScriptUI(engine)
     ui.show_ui()
     

@@ -42,6 +42,11 @@ class 日志管理器:
         if self.启用文件日志:
             os.makedirs(self.日志目录, exist_ok=True)
             self._切换日志文件()
+
+    @staticmethod
+    def 获取日志记录器(名称: str):
+        """获取指定名称的日志记录器（兼容性接口）"""
+        return 全局日志管理器
     
     def _切换日志文件(self):
         """切换日志文件（按日期）"""

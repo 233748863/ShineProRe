@@ -34,12 +34,20 @@ class 幽灵盒子按键接口(按键操作接口):
         
         # 尝试导入幽灵盒子库
         try:
+            import sys
+            import os
+            
+            # 添加 drive 目录到搜索路径
+            drive_path = os.path.join(os.getcwd(), 'drive')
+            if os.path.exists(drive_path) and drive_path not in sys.path:
+                sys.path.append(drive_path)
+                
             import ghostboxm as gb
             self.gb = gb
             self.logger.info("✅ 幽灵盒子库导入成功")
         except ImportError as e:
             self.logger.error(f"❌ 无法导入幽灵盒子库: {e}")
-            self.logger.warning("⚠️ 请确保 ghostboxm.pyd 文件已复制到项目根目录")
+            self.logger.warning("⚠️ 请确保 ghostboxm.pyd 文件已复制到项目根目录或 drive 目录下")
             return
         
         # 初始化设备
@@ -79,7 +87,7 @@ class 幽灵盒子按键接口(按键操作接口):
             
             self.设备已连接 = True
             self.初始化成功 = True
-            self.logger.success("✅ 幽灵盒子设备初始化完成")
+            self.logger.info("✅ 幽灵盒子设备初始化完成") # Changed success to info as logging module doesn't have success
             return True
             
         except Exception as e:
@@ -87,6 +95,49 @@ class 幽灵盒子按键接口(按键操作接口):
             self.logger.warning("⚠️ 请检查幽灵盒子设备状态和连接")
             return False
     
+    def 按下按键(self, 键值: int) -> bool:
+        """按下指定键值的按键"""
+        if not self.初始化成功:
+            return False
+        try:
+            if hasattr(self.gb, 'KeyDown'):
+                return self.gb.KeyDown(键值) != 0
+            self.logger.warning("幽灵盒子不支持单独按下按键")
+            return False
+        except Exception as e:
+            self.logger.error(f"按下按键异常: {e}")
+            return False
+
+    def 释放按键(self, 键值: int) -> bool:
+        """释放指定键值的按键"""
+        if not self.初始化成功:
+            return False
+        try:
+            if hasattr(self.gb, 'KeyUp'):
+                return self.gb.KeyUp(键值) != 0
+            self.logger.warning("幽灵盒子不支持单独释放按键")
+            return False
+        except Exception as e:
+            self.logger.error(f"释放按键异常: {e}")
+            return False
+
+    def 按下并释放(self, 键值: int) -> bool:
+        """按下并立即释放指定键值的按键"""
+        return self.按键(键值)
+
+    def 释放所有按键(self) -> bool:
+        """释放所有当前按下的按键"""
+        if not self.初始化成功:
+            return False
+        try:
+            if hasattr(self.gb, 'ReleaseAllKeys'):
+                return self.gb.ReleaseAllKeys() != 0
+            self.logger.warning("幽灵盒子不支持释放所有按键")
+            return False
+        except Exception as e:
+            self.logger.error(f"释放所有按键异常: {e}")
+            return False
+
     def 按键(self, 键值: int, 按键延迟: float = 0.1) -> bool:
         """
         按下并释放指定键值

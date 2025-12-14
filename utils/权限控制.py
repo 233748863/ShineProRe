@@ -6,7 +6,7 @@ import time
 import os
 import sys
 import ctypes
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable, Optional, Any
 from functools import wraps
 from collections import defaultdict
 

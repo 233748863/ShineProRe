@@ -4,9 +4,12 @@
 集成安全监控、异常隔离和性能优化
 """
 import time
+import threading
 from typing import Dict, Any, Optional, List
 from config.配置管理器 import 配置管理器
 from core.技能状态检测器 import 技能状态检测器
+from core.目标选择器 import 目标选择器
+from core.状态监测器 import 状态监测器
 from core.依赖容器 import 容器工厂, 配置提供器接口
 from core.策略接口 import 循环模式, 策略上下文, 策略管理器
 from interface.按键操作接口 import 按键操作接口
@@ -37,16 +40,47 @@ class 技能循环引擎:
             按键接口: 按键操作接口实例（可选，容器优先）
             图像接口: 图像获取接口实例（可选，容器优先）
         """
+        # 运行状态控制
+        self.running = False
+        self.paused = False
+        self.thread = None
+        
+        # 日志级别 (0=DEBUG, 1=INFO, 2=WARN, 3=ERROR)
+        self.日志级别 = 1
+
         # 初始化依赖容器
         if 容器 is None:
             self.容器 = 容器工厂.创建默认容器(配置路径)
+            
+            # 注册默认依赖
+            try:
+                from interface.按键操作接口 import 按键操作接口
+                from interface.幽灵盒子按键接口 import 幽灵盒子按键接口
+                self.容器.注册实现(按键操作接口, 幽灵盒子按键接口)
+                
+                from interface.图像获取接口 import 图像获取接口
+                from interface.Windows图像接口 import Windows图像接口
+                self.容器.注册实现(图像获取接口, Windows图像接口)
+            except ImportError as e:
+                self._日志("警告", f"无法注册默认接口: {e}")
         else:
             self.容器 = 容器
         
         # 获取依赖实例
         self.配置提供器 = self.容器.获取实例(配置提供器接口)
-        self.按键接口 = 按键接口 or self.容器.获取实例(按键操作接口)
-        self.图像接口 = 图像接口 or self.容器.获取实例(图像获取接口)
+        
+        try:
+            self.按键接口 = 按键接口 or self.容器.获取实例(按键操作接口)
+        except Exception as e:
+            self._日志("警告", f"未检测到硬件按键设备，按键功能将受限: {e}")
+            self._日志("信息", "提示：请确保幽灵盒子硬件已连接")
+            self.按键接口 = None
+            
+        try:
+            self.图像接口 = 图像接口 or self.容器.获取实例(图像获取接口)
+        except Exception as e:
+            self._日志("信息", f"未找到图像接口，将禁用智能模式: {e}")
+            self.图像接口 = None
         
         # 初始化配置管理器
         self.配置管理器 = 配置管理器(self.配置提供器.获取配置路径())
@@ -57,15 +91,19 @@ class 技能循环引擎:
         # 初始化核心组件
         if self.使用智能模式:
             self.状态检测器 = 技能状态检测器()
+            self.状态监测器 = 状态监测器(self.图像接口)
             self.策略管理器 = 策略管理器()
             self.检测区域 = self.配置管理器.获取检测区域()
             self.蓝条配置 = self.配置管理器.获取蓝条配置()
+            self.目标状态配置 = self.配置管理器.获取目标状态配置() if hasattr(self.配置管理器, '获取目标状态配置') else {}
         else:
             # 简单模式下，从配置中获取技能序列
             self.技能序列 = self._获取技能序列()
             self.当前技能索引 = 0
         
         self.自动选人键值 = self.配置管理器.获取自动选人键值()
+        self.选中最低血量键值 = self.配置管理器.获取选中最低血量键值() if hasattr(self.配置管理器, '获取选中最低血量键值') else 0
+        self.目标选择器 = 目标选择器(self.按键接口, self.选中最低血量键值)
         
         # 当前模式
         self.当前模式 = 循环模式.默认循环
@@ -82,11 +120,11 @@ class 技能循环引擎:
         self.配置监听器 = 配置监听器(self.配置提供器.获取配置路径())
         
         # 初始化异步功能
-        self.异步引擎 = 异步技能循环引擎()
-        self.异步检测器 = 异步技能检测器()
+        # self.异步引擎 = 异步技能循环引擎() # 暂时注释，避免未定义引用
+        # self.异步检测器 = 异步技能检测器() # 暂时注释，避免未定义引用
         
         # 初始化统一缓存管理器
-        self.全局缓存管理器 = 全局缓存管理器()
+        self.全局缓存管理器 = 全局缓存管理器
         
         # 注册技能状态检测器的缓存到全局缓存管理器
         if self.使用智能模式:
@@ -94,6 +132,14 @@ class 技能循环引擎:
         
         # 启动内存监控（优化：集成内存管理）
         self._启动内存监控()
+
+        # 性能优化参数
+        self._响应时间阈值 = 0.1  # 100ms阈值
+        self._连续超时次数 = 0
+        self._自适应调整间隔 = 10  # 每10次执行检查一次
+        
+        # 日志级别 (0=DEBUG, 1=INFO, 2=WARN, 3=ERROR)
+        self.日志级别 = 1
     
     def _启动内存监控(self):
         """启动内存监控"""
@@ -255,11 +301,13 @@ class 技能循环引擎:
             上下文 = 策略上下文(
                 技能状态检测器=self.状态检测器,
                 图像获取接口=self.图像接口,
+                状态监测器=self.状态监测器,
                 技能字典=self.配置管理器.技能字典,
                 气劲字典=self.配置管理器.气劲字典,
                 蓝条配置=self.蓝条配置,
                 检测区域=self.检测区域,
-                七情和合状态=self.七情和合状态
+                七情和合状态=self.七情和合状态,
+                目标状态配置=self.目标状态配置
             )
             
             # 使用策略推算技能（安全执行）
@@ -282,6 +330,12 @@ class 技能循环引擎:
             # 先执行自动选人（如果有配置）
             if self.自动选人键值 > 0:
                 self._安全按下并释放("自动选人", self.自动选人键值)
+            
+            # 使用目标选择器选择最低血量队友 (如果配置了)
+            if self.选中最低血量键值 > 0:
+                self.目标选择器.选择最低血量队友()
+                # 给一点时间让UI更新
+                time.sleep(0.05)
             
             # 释放技能
             成功 = self._安全按下并释放("技能释放", 技能键值)
@@ -1003,8 +1057,6 @@ class 技能循环引擎:
             "最大响应时间": self.性能统计["最大响应时间"]
         }
     
-
-    
     @安全执行按键操作
     def _安全按下并释放(self, 操作名称: str, 键值: int) -> bool:
         """安全地按下并释放按键"""
@@ -1118,7 +1170,7 @@ class 技能循环引擎:
         参数:
             状态: 1=启用, 0=禁用
         """
-        self.决策引擎.设置七情和合状态(状态)
+        self.七情和合状态 = 状态
     
     def 获取当前状态(self) -> Dict[str, Any]:
         """
@@ -1131,7 +1183,7 @@ class 技能循环引擎:
             "当前模式": self.当前模式,
             "最后技能键值": self.最后技能键值,
             "执行次数": self.执行次数,
-            "七情和合状态": self.决策引擎.获取七情和合状态(),
+            "七情和合状态": self.七情和合状态,
             "检测区域": self.检测区域,
             "自动选人键值": self.自动选人键值
         }
@@ -1147,11 +1199,62 @@ class 技能循环引擎:
     
     def 停止循环(self):
         """停止技能循环"""
-        self.当前模式 = 0
+        self.stop()
     
     def 释放所有按键(self):
         """释放所有当前按下的按键"""
         self.按键接口.释放所有按键()
+
+    def start(self):
+        """启动技能循环（后台线程）"""
+        if not self.running:
+            self.running = True
+            self.paused = False
+            self.thread = threading.Thread(target=self._run_loop, daemon=True)
+            self.thread.start()
+            self._日志("信息", "技能循环引擎已启动")
+
+    def stop(self):
+        """停止技能循环"""
+        self.running = False
+        self.paused = False
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=1.0)
+        self.当前模式 = 0
+        self.释放所有按键()
+        self._日志("信息", "技能循环引擎已停止")
+
+    def pause(self):
+        """暂停/恢复技能循环"""
+        self.paused = not self.paused
+        状态 = "暂停" if self.paused else "恢复"
+        self._日志("信息", f"技能循环引擎已{状态}")
+
+    def get_running_status(self) -> Dict[str, Any]:
+        """获取运行状态（UI适配）"""
+        return {
+            'running': self.running,
+            'paused': self.paused,
+            'mode': self.获取可用策略().get(self.当前模式, "未知模式") if self.使用智能模式 else "简单模式",
+            'execution_count': self.执行次数,
+            'avg_response_time': self.性能统计.get("平均响应时间", 0.0),
+            'success_rate': self.性能统计.get("成功率", 0.0) * 100
+        }
+
+    def _run_loop(self):
+        """后台循环线程"""
+        while self.running:
+            if not self.paused:
+                try:
+                    self.执行一次循环()
+                except Exception as e:
+                    self._日志("错误", f"循环异常: {e}")
+                    time.sleep(1)
+            else:
+                time.sleep(0.1)
+            
+            # 避免CPU占用过高
+            time.sleep(0.01)
 
 
 # 示例适配器实现（用于演示）

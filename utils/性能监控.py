@@ -73,6 +73,14 @@ class 性能监控器:
             self._内存监控线程 = threading.Thread(target=self._内存监控循环, daemon=True)
             self._内存监控线程.start()
     
+    def _内存监控循环(self):
+        """内存监控循环"""
+        while True:
+            try:
+                time.sleep(10)
+            except Exception:
+                pass
+
     def 开始记录(self, 操作名称: str) -> 性能指标:
         """
         开始记录一个操作
