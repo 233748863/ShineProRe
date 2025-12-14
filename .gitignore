@@ -119,3 +119,6 @@ $RECYCLE.BIN/
 测试文件/
 临时文件/
 备份文件/
+
+# AI助手配置
+.codebuddy/
