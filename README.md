@@ -81,8 +81,6 @@ ShineProRe/
 
 ## 🚀 快速开始
 
-### 方法一：使用桌面应用（推荐）
-
 ```bash
 # 安装依赖
 pip install PyQt6 opencv-python numpy pywin32
@@ -94,27 +92,11 @@ pip install PyQt6 opencv-python numpy pywin32
 python 桌面应用界面.py
 ```
 
-### 方法二：直接使用引擎
-
-```python
-from core.技能循环引擎 import 技能循环引擎
-
-# 创建引擎实例（会自动注册默认接口）
-引擎 = 技能循环引擎(配置路径="./config/")
-
-# 启动引擎（后台线程运行）
-引擎.start()
-
-# 暂停/恢复
-引擎.pause()
-
-# 停止引擎
-引擎.stop()
-
-# 获取运行状态
-status = 引擎.get_running_status()
-print(f"运行中: {status['running']}, 暂停: {status['paused']}")
-```
+### 功能说明
+- **启动/停止**: 点击主按钮控制引擎运行
+- **暂停/恢复**: 使用暂停按钮或快捷键 `Ctrl+Shift+P`
+- **隐藏界面**: 快捷键 `Ctrl+Shift+H` 或最小化到托盘
+- **退出程序**: 快捷键 `Ctrl+Shift+Q` 或点击退出按钮
 
 ## 📋 功能特性
 
