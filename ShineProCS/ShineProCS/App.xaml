@@ -1,0 +1,38 @@
+﻿<Application x:Class="ShineProCS.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:hc="https://handyorg.github.io/handycontrol"
+             xmlns:local="clr-namespace:ShineProCS">
+    <!-- 
+        【HandyControl 主题配置】
+        HandyControl 是一个现代化的 WPF UI 库
+        提供了 Fluent Design 风格的控件和主题
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 
+                    【引入 HandyControl 主题】
+                    Theme 包含所有控件样式和颜色定义
+                -->
+                <hc:Theme/>
+                
+                <!-- 
+                    【自定义配置】
+                    可以覆盖默认主题的某些设置
+                -->
+                <ResourceDictionary>
+                    <!-- 设置主题颜色为暗色 -->
+                    <SolidColorBrush x:Key="PrimaryBrush" Color="#FF0078D7"/>
+                    <SolidColorBrush x:Key="DangerBrush" Color="#FFDC3545"/>
+                    <SolidColorBrush x:Key="WarningBrush" Color="#FFFFA500"/>
+                    <SolidColorBrush x:Key="SuccessBrush" Color="#FF28A745"/>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- 转换器 -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <local:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

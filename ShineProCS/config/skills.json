@@ -1,0 +1,30 @@
+[
+    {
+        "Name": "技能1 - Q键",
+        "KeyCode": 81,
+        "Cooldown": 5.0,
+        "Priority": 1,
+        "Enabled": true
+    },
+    {
+        "Name": "技能2 - W键",
+        "KeyCode": 87,
+        "Cooldown": 8.0,
+        "Priority": 2,
+        "Enabled": true
+    },
+    {
+        "Name": "技能3 - E键",
+        "KeyCode": 69,
+        "Cooldown": 10.0,
+        "Priority": 3,
+        "Enabled": true
+    },
+    {
+        "Name": "技能4 - R键",
+        "KeyCode": 82,
+        "Cooldown": 15.0,
+        "Priority": 4,
+        "Enabled": true
+    }
+]
