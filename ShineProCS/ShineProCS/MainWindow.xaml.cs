@@ -7,70 +7,55 @@ namespace ShineProCS
     /// <summary>
     /// MainWindow.xaml 的交互逻辑（Code-Behind）
     /// </summary>
-    public partial class MainWindow : HandyControl.Controls.Window
+    public partial class MainWindow : Window
     {
         // 托盘图标对象
         private TaskbarIcon? _trayIcon;
 
         /// <summary>
-        /// 构造函数
+        /// 构造函数，支持依赖注入
         /// </summary>
-        /// <param name="viewModel">通过依赖注入传入的 ViewModel</param>
+        /// <param name="viewModel">主视图模型</param>
         public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
+            
+            // 设置数据上下文，使 XAML 绑定生效
             DataContext = viewModel;
             
             // 初始化托盘图标
             InitializeTrayIcon();
-            
-            // 窗口关闭事件（最小化到托盘而不是真正关闭）
-            this.Closing += MainWindow_Closing;
         }
 
         /// <summary>
-        /// 初始化系统托盘图标
+        /// 初始化托盘图标逻辑
         /// </summary>
         private void InitializeTrayIcon()
         {
             _trayIcon = new TaskbarIcon
             {
-                Icon = System.Drawing.SystemIcons.Application,
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Windows.Forms.Application.ExecutablePath),
                 ToolTipText = "ShinePro - 技能循环引擎",
-                ContextMenu = (System.Windows.Controls.ContextMenu)this.FindResource("TrayMenu")
+                ContextMenu = (System.Windows.Controls.ContextMenu)FindResource("TrayMenu")
             };
-
-            // 双击事件
-            _trayIcon.TrayMouseDoubleClick += TrayIcon_DoubleClick;
         }
 
-        // ===== 托盘图标事件处理 =====
-
-        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        /// <summary>
+        /// 窗口关闭时的处理
+        /// </summary>
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
+            // 点击关闭按钮时隐藏窗口而不是真正关闭
             e.Cancel = true;
             this.Hide();
-            _trayIcon?.ShowBalloonTip("ShinePro", "程序已最小化到系统托盘", BalloonIcon.Info);
+            base.OnClosing(e);
         }
 
-        private void TrayIcon_DoubleClick(object sender, RoutedEventArgs e)
-        {
-            if (this.IsVisible)
-            {
-                this.Hide();
-            }
-            else
-            {
-                this.Show();
-                this.WindowState = WindowState.Normal;
-                this.Activate();
-            }
-        }
+        // --- 托盘菜单事件处理 ---
 
         private void ShowWindow_Click(object sender, RoutedEventArgs e)
         {
             this.Show();
-            this.WindowState = WindowState.Normal;
             this.Activate();
         }
 
@@ -96,6 +81,11 @@ namespace ShineProCS
             _trayIcon?.Dispose();
             // 强制退出进程，确保所有后台线程关闭
             System.Environment.Exit(0);
+        }
+
+        private void RootNavigation_SelectionChanged(ModernWpf.Controls.NavigationView sender, ModernWpf.Controls.NavigationViewSelectionChangedEventArgs args)
+        {
+            // 导航逻辑处理，目前主要通过 XAML 中的 DataTrigger 处理内容切换
         }
     }
 }

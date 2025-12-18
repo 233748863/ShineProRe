@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Zv18DdPkZMs=",
+  "dgSpecHash": "bEVtl5AKMa8=",
   "success": true,
   "projectFilePath": "E:\\ShineProRe\\ShineProCS\\ShineProCS\\ShineProCS.csproj",
   "expectedPackageFiles": [
@@ -18,6 +18,7 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.filesystemglobbing\\8.0.0\\microsoft.extensions.filesystemglobbing.8.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.win32.systemevents\\8.0.0\\microsoft.win32.systemevents.8.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\modernwpfui\\0.9.6\\modernwpfui.0.9.6.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\opencvsharp4\\4.9.0.20240103\\opencvsharp4.4.9.0.20240103.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\opencvsharp4.runtime.win\\4.9.0.20240103\\opencvsharp4.runtime.win.4.9.0.20240103.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.drawing.common\\8.0.0\\system.drawing.common.8.0.0.nupkg.sha512",

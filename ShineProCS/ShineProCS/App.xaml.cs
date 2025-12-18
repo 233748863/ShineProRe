@@ -21,29 +21,49 @@ namespace ShineProCS
         // ServiceProvider 是 .NET 的依赖注入容器（类似 Python 的依赖容器）
         private ServiceProvider? _serviceProvider;
 
+        public App()
+        {
+            // 捕获 UI 线程上的未处理异常
+            this.DispatcherUnhandledException += (s, e) =>
+            {
+                System.IO.File.AppendAllText("startup_error.txt", $"\n[Dispatcher Error] {DateTime.Now}: {e.Exception}");
+                e.Handled = true;
+                MessageBox.Show($"UI 异常: {e.Exception.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            };
+
+            // 捕获非 UI 线程上的未处理异常
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                System.IO.File.AppendAllText("startup_error.txt", $"\n[AppDomain Error] {DateTime.Now}: {e.ExceptionObject}");
+            };
+        }
+
         /// <summary>
         /// 应用程序启动时调用
         /// 这是整个程序的入口点
         /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
+            try 
+            {
+                base.OnStartup(e);
 
-            // ===== 配置依赖注入 =====
-            // 创建服务集合（用于注册服务）
-            var services = new ServiceCollection();
-            
-            // 注册服务（告诉容器如何创建对象）
-            ConfigureServices(services);
-            
-            // 构建服务提供者（依赖注入容器）
-            _serviceProvider = services.BuildServiceProvider();
+                // ===== 配置依赖注入 =====
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                _serviceProvider = services.BuildServiceProvider();
 
-            // ===== 启动主窗口 =====
-            // 从容器中获取 MainWindow 实例
-            // 容器会自动注入所需的依赖（ViewModel、Engine 等）
-            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-            mainWindow.Show();  // 显示窗口
+                // ===== 启动主窗口 =====
+                var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+                mainWindow.Show();
+            }
+            catch (Exception ex)
+            {
+                // 将错误写入文件以便诊断
+                System.IO.File.WriteAllText("startup_error.txt", ex.ToString());
+                MessageBox.Show($"启动失败: {ex.Message}\n详情请查看 startup_error.txt", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+            }
         }
 
         /// <summary>
