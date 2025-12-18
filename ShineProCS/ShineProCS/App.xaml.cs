@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using ShineProCS.Core.Engine;
 using ShineProCS.Core.Interfaces;
 using ShineProCS.Core.Services;
+using ShineProCS.Core.Strategies;
 using ShineProCS.Infrastructure;
+using ShineProCS.Utils;
 using ShineProCS.ViewModels;
 
 namespace ShineProCS
@@ -58,29 +60,30 @@ namespace ShineProCS
         private void ConfigureServices(IServiceCollection services)
         {
             // ===== 注册接口实现 =====
-            // 告诉容器：当需要 IKeyboardInterface 时，创建 Win32KeyboardInterface
             services.AddSingleton<IKeyboardInterface, Win32KeyboardInterface>();
             services.AddSingleton<IImageInterface, OpenCvImageInterface>();
 
+            // ===== 注册工具类 =====
+            services.AddSingleton<PerformanceMonitor>();
+            services.AddSingleton<MemoryMonitor>();
+            services.AddSingleton<CacheManager>(CacheManager.Instance);
+
             // ===== 注册配置管理器 =====
-            // 配置管理器使用单例模式
             services.AddSingleton<ConfigManager>();
 
             // ===== 注册高级服务 =====
-            // 状态监测器和目标选择器
             services.AddSingleton<StateMonitor>();
             services.AddSingleton<TargetSelector>();
+            services.AddSingleton<StrategyManager>();
+            services.AddSingleton<SkillStateDetector>();
 
             // ===== 注册核心服务 =====
-            // 引擎使用单例模式（整个应用共享一个引擎实例）
             services.AddSingleton<SkillLoopEngine>();
 
             // ===== 注册 ViewModel =====
-            // ViewModel 也使用单例（整个应用共享）
             services.AddSingleton<MainViewModel>();
 
             // ===== 注册窗口 =====
-            // 窗口使用瞬时模式（每次请求创建新实例）
             services.AddTransient<MainWindow>();
         }
 

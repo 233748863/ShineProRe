@@ -1,0 +1,12 @@
+<Window x:Class="ShineProCS.Views.RegionSelectorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="请框选区域" WindowStyle="None" AllowsTransparency="True" Background="#33000000"
+        Topmost="True" Cursor="Cross" WindowStartupLocation="Manual">
+    <Canvas x:Name="SelectionCanvas" Background="Transparent" 
+            MouseDown="SelectionCanvas_MouseDown" 
+            MouseMove="SelectionCanvas_MouseMove" 
+            MouseUp="SelectionCanvas_MouseUp">
+        <Border x:Name="SelectionBorder" BorderBrush="Red" BorderThickness="2" Background="#33FF0000" Visibility="Collapsed"/>
+    </Canvas>
+</Window>

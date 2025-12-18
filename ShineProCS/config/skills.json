@@ -1,30 +1,219 @@
 [
     {
-        "Name": "技能1 - Q键",
-        "KeyCode": 81,
-        "Cooldown": 5.0,
-        "Priority": 1,
-        "Enabled": true
+        "Name": "青川濯莲",
+        "KeyCode": 49,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
     },
     {
-        "Name": "技能2 - W键",
+        "Name": "七情和合",
+        "KeyCode": 50,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
+    },
+    {
+        "Name": "千枝绽蕊",
         "KeyCode": 87,
-        "Cooldown": 8.0,
-        "Priority": 2,
-        "Enabled": true
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [
+            {
+                "Name": "千枝态",
+                "IconRegion": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "TemplatePath": "",
+                "SimilarityThreshold": 0.8,
+                "IsDebuff": false,
+                "IsRequired": true
+            }
+        ],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
     },
     {
-        "Name": "技能3 - E键",
+        "Name": "逐云寒蕊",
+        "KeyCode": 51,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
+    },
+    {
+        "Name": "当归四逆",
         "KeyCode": 69,
-        "Cooldown": 10.0,
-        "Priority": 3,
-        "Enabled": true
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 50.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
     },
     {
-        "Name": "技能4 - R键",
-        "KeyCode": 82,
-        "Cooldown": 15.0,
-        "Priority": 4,
-        "Enabled": true
+        "Name": "银光照雪",
+        "KeyCode": 52,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
+    },
+    {
+        "Name": "赤芍寒香",
+        "KeyCode": 81,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 80.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [
+            {
+                "Name": "赤芍Buff",
+                "IconRegion": [
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "TemplatePath": "",
+                "SimilarityThreshold": 0.8,
+                "IsDebuff": false,
+                "IsRequired": false
+            }
+        ],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
+    },
+    {
+        "Name": "绿野蔓生",
+        "KeyCode": 53,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
+    },
+    {
+        "Name": "白芷含芳",
+        "KeyCode": 54,
+        "Priority": 0,
+        "Enabled": true,
+        "IconRegion": [
+            0,
+            0,
+            0,
+            0
+        ],
+        "TemplatePath": "",
+        "SimilarityThreshold": 0.8,
+        "MinHp": 0.0,
+        "MinMp": 0.0,
+        "RequireTarget": false,
+        "Cooldown": 0.0,
+        "BuffRequirements": [],
+        "RequiredBuffs": "",
+        "ExcludedBuffs": ""
     }
 ]

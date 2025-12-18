@@ -1,75 +1,109 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
+using System.Collections.Generic;
+
 namespace ShineProCS.Models
 {
     /// <summary>
     /// 应用程序配置模型
-    /// 对应 appsettings.json 文件的结构
-    /// 
-    /// 【配置模型说明】
-    /// 在 C# 中，我们使用类来映射 JSON 配置文件
-    /// 这样可以获得类型安全和智能提示
     /// </summary>
-    public class AppSettings
+    public partial class AppSettings : ObservableObject
     {
-        /// <summary>
-        /// 检测区域配置（屏幕坐标）
-        /// 格式：[x, y, width, height]
-        /// </summary>
-        public int[] DetectionRegion { get; set; } = new int[4];
+        [ObservableProperty]
+        private int[] _detectionRegion = new int[4];
+
+        [ObservableProperty]
+        private int[] _manaBarRegion = new int[4];
+
+        [ObservableProperty]
+        private bool _enableSmartMode = true;
+
+        [ObservableProperty]
+        private int _loopInterval = 1000;
+
+        [ObservableProperty]
+        private int _logLevel = 1;
+    }
+
+    /// <summary>
+    /// Buff/Debuff 配置模型
+    /// </summary>
+    public partial class BuffConfig : ObservableObject
+    {
+        [ObservableProperty]
+        private string _name = string.Empty;
+
+        [ObservableProperty]
+        private int[] _iconRegion = new int[4];
+
+        [ObservableProperty]
+        private string _templatePath = string.Empty;
+
+        [ObservableProperty]
+        private double _similarityThreshold = 0.8;
+
+        [ObservableProperty]
+        private bool _isDebuff = false;
 
         /// <summary>
-        /// 蓝条监控区域配置
+        /// 是否必须拥有（对于 Buff）或不能拥有（对于 Debuff）
         /// </summary>
-        public int[] ManaBarRegion { get; set; } = new int[4];
-
-        /// <summary>
-        /// 是否启用智能模式
-        /// true: 使用图像识别
-        /// false: 使用简单循环
-        /// </summary>
-        public bool EnableSmartMode { get; set; } = true;
-
-        /// <summary>
-        /// 循环间隔时间（毫秒）
-        /// </summary>
-        public int LoopInterval { get; set; } = 1000;
-
-        /// <summary>
-        /// 日志级别
-        /// 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR
-        /// </summary>
-        public int LogLevel { get; set; } = 1;
+        [ObservableProperty]
+        private bool _isRequired = true;
     }
 
     /// <summary>
     /// 技能配置模型
-    /// 对应 skills.json 文件的结构
     /// </summary>
-    public class SkillConfig
+    public partial class SkillConfig : ObservableObject
     {
-        /// <summary>
-        /// 技能名称
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _name = string.Empty;
 
-        /// <summary>
-        /// 技能按键（键值）
-        /// 例如：81 代表 Q 键
-        /// </summary>
-        public int KeyCode { get; set; }
+        [ObservableProperty]
+        private int _keyCode;
 
-        /// <summary>
-        /// 技能冷却时间（秒）
-        /// </summary>
-        public double Cooldown { get; set; }
+        [ObservableProperty]
+        private int _priority;
 
-        /// <summary>
-        /// 优先级（数字越大优先级越高）
-        /// </summary>
-        public int Priority { get; set; }
+        [ObservableProperty]
+        private bool _enabled = true;
 
-        /// <summary>
-        /// 是否启用
-        /// </summary>
-        public bool Enabled { get; set; } = true;
+        // ===== 视觉检测配置 =====
+
+        [ObservableProperty]
+        private int[] _iconRegion = new int[4];
+
+        [ObservableProperty]
+        private string _templatePath = string.Empty;
+
+        [ObservableProperty]
+        private double _similarityThreshold = 0.8;
+
+        // ===== 释放前置条件 =====
+
+        [ObservableProperty]
+        private double _minHp = 0;
+
+        [ObservableProperty]
+        private double _minMp = 0;
+
+        [ObservableProperty]
+        private bool _requireTarget = false;
+
+        [ObservableProperty]
+        private double _cooldown;
+
+        // ===== Buff/Debuff 前置条件 (可视化版) =====
+
+        [ObservableProperty]
+        private ObservableCollection<BuffConfig> _buffRequirements = new ObservableCollection<BuffConfig>();
+
+        // 保留旧字段用于兼容性（可选，建议逐步迁移）
+        [ObservableProperty]
+        private string _requiredBuffs = string.Empty;
+
+        [ObservableProperty]
+        private string _excludedBuffs = string.Empty;
     }
 }

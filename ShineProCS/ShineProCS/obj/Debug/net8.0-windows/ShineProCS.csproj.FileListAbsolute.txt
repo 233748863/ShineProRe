@@ -41,3 +41,5 @@ E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\ShineProCS.pdb
 E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\ShineProCS.genruntimeconfig.cache
 E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\ref\ShineProCS.dll
 E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\Hardcodet.NotifyIcon.Wpf.dll
+E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\RegionSelectorWindow.baml
+E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\RegionSelectorWindow.g.cs

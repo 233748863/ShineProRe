@@ -157,33 +157,38 @@ namespace ShineProCS.Core.Services
         /// </summary>
         private List<SkillConfig> CreateDefaultSkills()
         {
-            return new List<SkillConfig>
+            var skills = new List<SkillConfig>
             {
-                new SkillConfig
-                {
-                    Name = "技能1",
-                    KeyCode = 81,  // Q 键
-                    Cooldown = 5.0,
-                    Priority = 1,
-                    Enabled = true
+                new SkillConfig { Name = "青川濯莲", KeyCode = 49, Enabled = true },
+                new SkillConfig { Name = "七情和合", KeyCode = 50, Enabled = true },
+                new SkillConfig 
+                { 
+                    Name = "千枝绽蕊", 
+                    KeyCode = 87, 
+                    Enabled = true,
+                    BuffRequirements = new System.Collections.ObjectModel.ObservableCollection<BuffConfig>
+                    {
+                        new BuffConfig { Name = "千枝态", IsRequired = true, IsDebuff = false }
+                    }
                 },
-                new SkillConfig
-                {
-                    Name = "技能2",
-                    KeyCode = 87,  // W 键
-                    Cooldown = 8.0,
-                    Priority = 2,
-                    Enabled = true
+                new SkillConfig { Name = "逐云寒蕊", KeyCode = 51, Enabled = true },
+                new SkillConfig { Name = "当归四逆", KeyCode = 69, Enabled = true, MinHp = 50 },
+                new SkillConfig { Name = "银光照雪", KeyCode = 52, Enabled = true },
+                new SkillConfig 
+                { 
+                    Name = "赤芍寒香", 
+                    KeyCode = 81, 
+                    Enabled = true, 
+                    MinHp = 80,
+                    BuffRequirements = new System.Collections.ObjectModel.ObservableCollection<BuffConfig>
+                    {
+                        new BuffConfig { Name = "赤芍Buff", IsRequired = false, IsDebuff = false }
+                    }
                 },
-                new SkillConfig
-                {
-                    Name = "技能3",
-                    KeyCode = 69,  // E 键
-                    Cooldown = 10.0,
-                    Priority = 3,
-                    Enabled = true
-                }
+                new SkillConfig { Name = "绿野蔓生", KeyCode = 53, Enabled = true },
+                new SkillConfig { Name = "白芷含芳", KeyCode = 54, Enabled = true }
             };
+            return skills;
         }
 
         // ===== 公共属性（用于访问配置）=====
@@ -209,8 +214,12 @@ namespace ShineProCS.Core.Services
         public int[] GetManaBarRegion() => AppSettings.ManaBarRegion;
 
         /// <summary>
-        /// 是否启用智能模式
+        /// 保存所有配置到文件
         /// </summary>
-        public bool IsSmartModeEnabled() => AppSettings.EnableSmartMode;
+        public void SaveConfigs()
+        {
+            SaveAppSettings();
+            SaveSkills();
+        }
     }
 }
