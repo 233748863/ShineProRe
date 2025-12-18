@@ -76,6 +76,17 @@ namespace ShineProCS.Core.Services
                 {
                     var json = File.ReadAllText(_skillsPath);
                     _skills = JsonSerializer.Deserialize<List<SkillConfig>>(json);
+                    
+                    // 确保所有技能的集合都已初始化（防止旧配置反序列化出 null）
+                    if (_skills != null)
+                    {
+                        foreach (var skill in _skills)
+                        {
+                            if (skill.BuffRequirements == null)
+                                skill.BuffRequirements = new System.Collections.ObjectModel.ObservableCollection<BuffConfig>();
+                        }
+                    }
+                    
                     Console.WriteLine($"✅ 技能配置加载成功，共 {_skills?.Count ?? 0} 个技能");
                 }
                 else

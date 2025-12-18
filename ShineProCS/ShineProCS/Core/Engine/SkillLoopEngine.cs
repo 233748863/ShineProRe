@@ -208,13 +208,37 @@ namespace ShineProCS.Core.Engine
                 return false;
             }
 
-            // 4. 执行按键模拟
+            // 4. 执行按键模拟 (支持连招逻辑)
             try
             {
+                // A. 检查并执行前置技能 (如：补 Buff)
+                if (!string.IsNullOrEmpty(selectedSkill.Config.PreCastConditionBuffName) && 
+                    selectedSkill.Config.PreCastKeyCode > 0)
+                {
+                    bool hasBuff = _skillDetector.CheckSpecificBuff(selectedSkill.Config.PreCastConditionBuffName);
+                    if (!hasBuff)
+                    {
+                        Console.WriteLine($"[Engine] 检测到 Buff {selectedSkill.Config.PreCastConditionBuffName} 缺失，触发前置技能 {selectedSkill.Config.PreCastKeyCode}");
+                        _keyboard.PressAndRelease(selectedSkill.Config.PreCastKeyCode);
+                        if (selectedSkill.Config.ComboDelay > 0) Thread.Sleep(selectedSkill.Config.ComboDelay);
+                    }
+                }
+
+                // B. 执行主技能
                 bool success = _keyboard.PressAndRelease(selectedSkill.Config.KeyCode);
+                
                 if (success)
                 {
                     selectedSkill.MarkAsUsed();
+
+                    // C. 执行后置技能 (如：取消 Buff)
+                    if (selectedSkill.Config.PostCastKeyCode > 0)
+                    {
+                        if (selectedSkill.Config.ComboDelay > 0) Thread.Sleep(selectedSkill.Config.ComboDelay);
+                        Console.WriteLine($"[Engine] 主技能释放成功，触发后置技能 {selectedSkill.Config.PostCastKeyCode}");
+                        _keyboard.PressAndRelease(selectedSkill.Config.PostCastKeyCode);
+                    }
+
                     return true;
                 }
             }

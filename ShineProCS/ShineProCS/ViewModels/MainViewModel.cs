@@ -222,20 +222,49 @@ namespace ShineProCS.ViewModels
         // ===== 可视化 Buff 管理命令 =====
 
         [RelayCommand]
-        private void AddBuffRequirement()
+        private void AddBuffRequirement(SkillConfig? skill)
         {
-            if (SelectedSkill != null)
+            // 如果没传参数，尝试使用当前选中的技能
+            var targetSkill = skill ?? SelectedSkill;
+            if (targetSkill != null)
             {
-                SelectedSkill.BuffRequirements.Add(new BuffConfig { Name = "新 Buff" });
+                // 彻底防御：如果集合为 null，则初始化它
+                if (targetSkill.BuffRequirements == null)
+                {
+                    targetSkill.BuffRequirements = new ObservableCollection<BuffConfig>();
+                }
+                
+                targetSkill.BuffRequirements.Add(new BuffConfig { Name = "新 Buff" });
+                StatusText = $"已为技能 {targetSkill.Name} 添加 Buff 要求";
+            }
+            else
+            {
+                StatusText = "请先选择一个技能";
             }
         }
 
         [RelayCommand]
-        private void DeleteBuffRequirement(BuffConfig? buff)
+        private void DeleteBuffRequirement(object? parameter)
         {
-            if (SelectedSkill != null && buff != null)
+            if (parameter is BuffConfig buff && SelectedSkill != null)
             {
                 SelectedSkill.BuffRequirements.Remove(buff);
+                StatusText = $"已删除 Buff 要求: {buff.Name}";
+            }
+        }
+
+        [RelayCommand]
+        private void AddGlobalBuff()
+        {
+            AppSettings.GlobalBuffs.Add(new BuffConfig { Name = "新全局 Buff" });
+        }
+
+        [RelayCommand]
+        private void DeleteGlobalBuff(BuffConfig? buff)
+        {
+            if (buff != null)
+            {
+                AppSettings.GlobalBuffs.Remove(buff);
             }
         }
 

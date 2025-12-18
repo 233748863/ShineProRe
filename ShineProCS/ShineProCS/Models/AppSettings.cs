@@ -9,11 +9,18 @@ namespace ShineProCS.Models
     /// </summary>
     public partial class AppSettings : ObservableObject
     {
-        [ObservableProperty]
-        private int[] _detectionRegion = new int[4];
+        public AppSettings()
+        {
+            _globalBuffs = new ObservableCollection<BuffConfig>();
+            _detectionRegion = new int[4];
+            _manaBarRegion = new int[4];
+        }
 
         [ObservableProperty]
-        private int[] _manaBarRegion = new int[4];
+        private int[] _detectionRegion;
+
+        [ObservableProperty]
+        private int[] _manaBarRegion;
 
         [ObservableProperty]
         private bool _enableSmartMode = true;
@@ -23,6 +30,9 @@ namespace ShineProCS.Models
 
         [ObservableProperty]
         private int _logLevel = 1;
+
+        [ObservableProperty]
+        private ObservableCollection<BuffConfig> _globalBuffs;
     }
 
     /// <summary>
@@ -57,6 +67,12 @@ namespace ShineProCS.Models
     /// </summary>
     public partial class SkillConfig : ObservableObject
     {
+        public SkillConfig()
+        {
+            _buffRequirements = new ObservableCollection<BuffConfig>();
+            _iconRegion = new int[4];
+        }
+
         [ObservableProperty]
         private string _name = string.Empty;
 
@@ -72,7 +88,7 @@ namespace ShineProCS.Models
         // ===== 视觉检测配置 =====
 
         [ObservableProperty]
-        private int[] _iconRegion = new int[4];
+        private int[] _iconRegion;
 
         [ObservableProperty]
         private string _templatePath = string.Empty;
@@ -97,7 +113,7 @@ namespace ShineProCS.Models
         // ===== Buff/Debuff 前置条件 (可视化版) =====
 
         [ObservableProperty]
-        private ObservableCollection<BuffConfig> _buffRequirements = new ObservableCollection<BuffConfig>();
+        private ObservableCollection<BuffConfig> _buffRequirements;
 
         // 保留旧字段用于兼容性（可选，建议逐步迁移）
         [ObservableProperty]
@@ -105,5 +121,19 @@ namespace ShineProCS.Models
 
         [ObservableProperty]
         private string _excludedBuffs = string.Empty;
+
+        // ===== 连招 (Combo) 配置 =====
+
+        [ObservableProperty]
+        private int _preCastKeyCode;
+
+        [ObservableProperty]
+        private string _preCastConditionBuffName = string.Empty;
+
+        [ObservableProperty]
+        private int _postCastKeyCode;
+
+        [ObservableProperty]
+        private int _comboDelay = 100;
     }
 }

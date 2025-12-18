@@ -53,6 +53,11 @@
                         <ui:SymbolIcon Symbol="Favorite" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
+                <ui:NavigationViewItem Content="状态库" Tag="buffs">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Library" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
                 <ui:NavigationViewItem Content="全局设置" Tag="settings">
                     <ui:NavigationViewItem.Icon>
                         <ui:SymbolIcon Symbol="Setting" />
@@ -235,7 +240,7 @@
                         <!-- 技能详情 -->
                         <Border Grid.Column="1" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
                                 CornerRadius="8" Padding="20">
-                            <ScrollViewer>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel DataContext="{Binding SelectedSkill}">
                                     <TextBlock Text="技能参数配置" Style="{DynamicResource SubtitleTextBlockStyle}" Margin="0,0,0,16" FontSize="18"/>
                                     
@@ -251,12 +256,12 @@
                                             <TextBox Text="{Binding IconRegion[3]}" ui:ControlHelper.Header="H" Margin="1"/>
                                         </UniformGrid>
                                         <Button Content="在屏幕上框选区域" 
-                                                   Command="{Binding DataContext.SelectRegionCommand, ElementName=RootWindow}"
+                                                   Command="{Binding DataContext.SelectRegionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    CommandParameter="{Binding}" Height="36" HorizontalAlignment="Stretch"/>
 
                                         <TextBox Text="{Binding TemplatePath}" ui:ControlHelper.Header="模板文件路径"/>
                                         <Button Content="选择模板文件" 
-                                                   Command="{Binding DataContext.SelectTemplateFileCommand, ElementName=RootWindow}"
+                                                   Command="{Binding DataContext.SelectTemplateFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    CommandParameter="{Binding}" Height="36" HorizontalAlignment="Stretch"/>
                                         
                                         <TextBlock Text="释放条件" Style="{DynamicResource BodyTextBlockStyle}" FontWeight="Bold" Margin="0,8,0,0"/>
@@ -264,63 +269,88 @@
                                             <TextBox Text="{Binding MinHp}" ui:ControlHelper.Header="最低 HP %" Margin="1"/>
                                             <TextBox Text="{Binding MinMp}" ui:ControlHelper.Header="最低 MP %" Margin="1"/>
                                         </UniformGrid>
+
+                                        <TextBlock Text="连招 (Combo) 配置" Style="{DynamicResource BodyTextBlockStyle}" FontWeight="Bold" Margin="0,8,0,0"/>
+                                        <Border Background="{DynamicResource SystemControlBackgroundChromeLowBrush}" CornerRadius="4" Padding="12">
+                                            <ui:SimpleStackPanel Spacing="8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Text="{Binding PreCastKeyCode}" ui:ControlHelper.Header="前置技能 (VK)" Margin="0,0,4,0"/>
+                                                    <TextBox Grid.Column="1" Text="{Binding PreCastConditionBuffName}" ui:ControlHelper.Header="触发 Buff 名 (缺失时触发)" Margin="4,0,0,0"/>
+                                                </Grid>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Text="{Binding PostCastKeyCode}" ui:ControlHelper.Header="后置技能 (VK)" Margin="0,0,4,0"/>
+                                                    <TextBox Grid.Column="1" Text="{Binding ComboDelay}" ui:ControlHelper.Header="连招延迟 (ms)" Margin="4,0,0,0"/>
+                                                </Grid>
+                                            </ui:SimpleStackPanel>
+                                        </Border>
                                         
                                         <DockPanel Margin="0,8,0,0">
                                             <TextBlock Text="Buff/Debuff 视觉要求" Style="{DynamicResource BodyTextBlockStyle}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             <Button Content="添加要求" 
-                                                       Command="{Binding DataContext.AddBuffRequirementCommand, ElementName=RootWindow}" 
+                                                       Command="{Binding DataContext.AddBuffRequirementCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                       CommandParameter="{Binding}"
                                                        Height="32" HorizontalAlignment="Right"/>
                                         </DockPanel>
 
-                                        <ItemsControl ItemsSource="{Binding BuffRequirements}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border Background="{DynamicResource SystemControlBackgroundChromeLowBrush}" 
-                                                            CornerRadius="4" Padding="12" Margin="0,0,0,8">
-                                                        <ui:SimpleStackPanel Spacing="6">
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
-                                                                <TextBox Text="{Binding Name}" ui:ControlHelper.Header="Buff 名称" Margin="0,0,8,0"/>
-                                                                <Button Grid.Column="1" Content="删除" 
-                                                                           Command="{Binding DataContext.DeleteBuffRequirementCommand, ElementName=RootWindow}" 
-                                                                           CommandParameter="{Binding}" Height="32" VerticalAlignment="Bottom"/>
-                                                            </Grid>
+                                        <StackPanel Margin="0,8,0,0">
+                                            <ItemsControl ItemsSource="{Binding BuffRequirements}" MinHeight="10">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{DynamicResource SystemControlBackgroundChromeLowBrush}" 
+                                                                CornerRadius="4" Padding="12" Margin="0,0,0,8">
+                                                            <ui:SimpleStackPanel Spacing="6">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBox Text="{Binding Name}" ui:ControlHelper.Header="Buff 名称" Margin="0,0,8,0"/>
+                                                                    <Button Grid.Column="1" Content="删除" 
+                                                                               Command="{Binding DataContext.DeleteBuffRequirementCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                               CommandParameter="{Binding}" Height="32" VerticalAlignment="Bottom"/>
+                                                                </Grid>
 
-                                                            <UniformGrid Columns="2">
-                                                                <CheckBox IsChecked="{Binding IsRequired}" Content="必须满足" FontSize="12"/>
-                                                                <CheckBox IsChecked="{Binding IsDebuff}" Content="是减益" FontSize="12"/>
-                                                            </UniformGrid>
+                                                                <UniformGrid Columns="2">
+                                                                    <CheckBox IsChecked="{Binding IsRequired}" Content="必须满足" FontSize="12"/>
+                                                                    <CheckBox IsChecked="{Binding IsDebuff}" Content="是减益" FontSize="12"/>
+                                                                </UniformGrid>
 
-                                                            <UniformGrid Columns="4">
-                                                                <TextBox Text="{Binding IconRegion[0]}" ui:ControlHelper.Header="X" Margin="1"/>
-                                                                <TextBox Text="{Binding IconRegion[1]}" ui:ControlHelper.Header="Y" Margin="1"/>
-                                                                <TextBox Text="{Binding IconRegion[2]}" ui:ControlHelper.Header="W" Margin="1"/>
-                                                                <TextBox Text="{Binding IconRegion[3]}" ui:ControlHelper.Header="H" Margin="1"/>
-                                                            </UniformGrid>
-                                                            
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                </Grid.ColumnDefinitions>
-                                                                <Button Grid.Column="0" Content="框选区域" 
-                                                                           Command="{Binding DataContext.SelectRegionCommand, ElementName=RootWindow}" 
-                                                                           CommandParameter="{Binding}" Margin="1" Height="32" HorizontalAlignment="Stretch"/>
-                                                                <Button Grid.Column="1" Content="选择模板" 
-                                                                           Command="{Binding DataContext.SelectTemplateFileCommand, ElementName=RootWindow}" 
-                                                                           CommandParameter="{Binding}" Margin="1" Height="32" HorizontalAlignment="Stretch"/>
-                                                            </Grid>
-                                                        </ui:SimpleStackPanel>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                                <UniformGrid Columns="4">
+                                                                    <TextBox Text="{Binding IconRegion[0]}" ui:ControlHelper.Header="X" Margin="1"/>
+                                                                    <TextBox Text="{Binding IconRegion[1]}" ui:ControlHelper.Header="Y" Margin="1"/>
+                                                                    <TextBox Text="{Binding IconRegion[2]}" ui:ControlHelper.Header="W" Margin="1"/>
+                                                                    <TextBox Text="{Binding IconRegion[3]}" ui:ControlHelper.Header="H" Margin="1"/>
+                                                                </UniformGrid>
+                                                                
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Button Grid.Column="0" Content="框选区域" 
+                                                                               Command="{Binding DataContext.SelectRegionCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                               CommandParameter="{Binding}" Margin="1" Height="32" HorizontalAlignment="Stretch"/>
+                                                                    <Button Grid.Column="1" Content="选择模板" 
+                                                                               Command="{Binding DataContext.SelectTemplateFileCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                                               CommandParameter="{Binding}" Margin="1" Height="32" HorizontalAlignment="Stretch"/>
+                                                                </Grid>
+                                                            </ui:SimpleStackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
 
                                         <Button Content="保存当前配置" Style="{DynamicResource AccentButtonStyle}"
-                                                   Command="{Binding DataContext.SaveConfigCommand, ElementName=RootWindow}" 
+                                                   Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                                                    Margin="0,16,0,0" Height="40" HorizontalAlignment="Stretch"/>
                                     </ui:SimpleStackPanel>
                                 </StackPanel>
@@ -329,7 +359,114 @@
                     </Grid>
 
                     <!-- ========================================== -->
-                    <!-- 页面 3: 全局设置 (Settings) -->
+                    <!-- 页面 3: Buff 库 (Buffs) -->
+                    <!-- ========================================== -->
+                    <Grid x:Name="BuffLibraryPage">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ElementName=RootNavigation, Path=SelectedItem.Tag}" Value="buffs">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Buff 列表 -->
+                        <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                CornerRadius="8" Margin="0,0,16,0">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Top" Margin="16,16,16,8">
+                                    <TextBlock Text="全局状态库" Style="{DynamicResource SubtitleTextBlockStyle}" FontSize="18"/>
+                                    <TextBlock Text="定义可被引用的视觉状态 (Buff/Debuff)" Style="{DynamicResource CaptionTextBlockStyle}" 
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel DockPanel.Dock="Bottom" Margin="8">
+                                    <Button Content="添加新状态" 
+                                               Command="{Binding DataContext.AddGlobalBuffCommand, ElementName=RootWindow}" 
+                                               Height="36" HorizontalAlignment="Stretch"/>
+                                </StackPanel>
+
+                                <ListBox x:Name="GlobalBuffList" ItemsSource="{Binding AppSettings.GlobalBuffs}" 
+                                         Background="Transparent" BorderThickness="0" Margin="4,0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"/>
+                                                <Border Visibility="{Binding IsDebuff, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Background="#E57373" CornerRadius="4" Padding="4,1" Margin="8,0,0,0">
+                                                    <TextBlock Text="Debuff" FontSize="10" Foreground="White" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Buff 详情 -->
+                        <Border Grid.Column="1" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                CornerRadius="8" Padding="20">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel DataContext="{Binding ElementName=GlobalBuffList, Path=SelectedItem}">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <TextBlock Text="状态视觉参数" Style="{DynamicResource SubtitleTextBlockStyle}" Margin="0,0,0,16" FontSize="18"/>
+                                    
+                                    <ui:SimpleStackPanel Spacing="12">
+                                        <TextBox Text="{Binding Name}" ui:ControlHelper.Header="状态名称 (用于连招引用)" />
+                                        
+                                        <CheckBox IsChecked="{Binding IsDebuff}" Content="这是一个减益状态 (Debuff)" FontSize="14" FontWeight="Bold"/>
+                                        
+                                        <TextBlock Text="检测区域" Style="{DynamicResource BodyTextBlockStyle}" FontWeight="Bold" Margin="0,8,0,0"/>
+                                        <UniformGrid Columns="4">
+                                            <TextBox Text="{Binding IconRegion[0]}" ui:ControlHelper.Header="X" Margin="1"/>
+                                            <TextBox Text="{Binding IconRegion[1]}" ui:ControlHelper.Header="Y" Margin="1"/>
+                                            <TextBox Text="{Binding IconRegion[2]}" ui:ControlHelper.Header="W" Margin="1"/>
+                                            <TextBox Text="{Binding IconRegion[3]}" ui:ControlHelper.Header="H" Margin="1"/>
+                                        </UniformGrid>
+                                        <Button Content="在屏幕上框选区域" 
+                                                   Command="{Binding DataContext.SelectRegionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   CommandParameter="{Binding}" Height="36" HorizontalAlignment="Stretch"/>
+
+                                        <TextBox Text="{Binding TemplatePath}" ui:ControlHelper.Header="模板图片路径"/>
+                                        <Button Content="选择模板文件" 
+                                                   Command="{Binding DataContext.SelectTemplateFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   CommandParameter="{Binding}" Height="36" HorizontalAlignment="Stretch"/>
+                                        
+                                        <Slider Value="{Binding SimilarityThreshold}" Minimum="0.5" Maximum="1.0" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                                ui:ControlHelper.Header="{Binding SimilarityThreshold, StringFormat=相似度阈值: {0:F2}}"/>
+
+                                        <Button Content="删除此状态" 
+                                                   Command="{Binding DataContext.DeleteGlobalBuffCommand, ElementName=RootWindow}" 
+                                                   CommandParameter="{Binding}" Margin="0,24,0,0" HorizontalAlignment="Stretch"/>
+
+                                        <Button Content="保存全局设置" Style="{DynamicResource AccentButtonStyle}"
+                                                   Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                   Margin="0,12,0,0" Height="40" HorizontalAlignment="Stretch"/>
+                                    </ui:SimpleStackPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+
+                    <!-- ========================================== -->
+                    <!-- 页面 4: 全局设置 (Settings) -->
                     <!-- ========================================== -->
                     <Grid x:Name="SettingsPage">
                         <Grid.Style>
@@ -360,7 +497,7 @@
                                 </UniformGrid>
 
                                 <Button Content="保存全局设置" Style="{DynamicResource AccentButtonStyle}"
-                                           Command="{Binding DataContext.SaveConfigCommand, ElementName=RootWindow}" 
+                                           Command="{Binding DataContext.SaveConfigCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                                            Margin="0,16,0,0" Height="40" HorizontalAlignment="Stretch"/>
                             </ui:SimpleStackPanel>
                         </Border>

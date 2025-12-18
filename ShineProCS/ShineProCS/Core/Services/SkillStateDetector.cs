@@ -75,6 +75,36 @@ namespace ShineProCS.Core.Services
         /// <summary>
         /// 检查技能的 Buff/Debuff 前置条件
         /// </summary>
+        public bool CheckSpecificBuff(string buffName)
+        {
+            if (string.IsNullOrEmpty(buffName)) return true;
+
+            // 1. 优先在全局 Buff 库中查找
+            foreach (var buff in _config.AppSettings.GlobalBuffs)
+            {
+                if (buff.Name == buffName)
+                {
+                    return CheckBuffVisually(buff);
+                }
+            }
+
+            // 2. 在技能私有 Buff 配置中查找 (兼容旧版)
+            foreach (var skill in _config.Skills)
+            {
+                foreach (var buff in skill.BuffRequirements)
+                {
+                    if (buff.Name == buffName)
+                    {
+                        return CheckBuffVisually(buff);
+                    }
+                }
+            }
+
+            // 3. 在当前游戏状态的字符串列表中查找 (兼容性)
+            var gameState = _stateMonitor.DetectGameState();
+            return gameState.ActiveBuffs.Contains(buffName);
+        }
+
         private bool CheckBuffConditions(SkillConfig config, GameState state)
         {
             // 1. 检查可视化 Buff 要求 (核心)
