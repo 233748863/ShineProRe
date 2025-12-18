@@ -173,3 +173,5 @@ E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\uz-Latn-UZ\ModernWp
 E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\uz-Latn-UZ\ModernWpf.resources.dll
 E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\vi-VN\ModernWpf.Controls.resources.dll
 E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\vi-VN\ModernWpf.resources.dll
+E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\OverlayWindow.baml
+E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\OverlayWindow.g.cs

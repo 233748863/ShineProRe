@@ -32,44 +32,57 @@ namespace ShineProCS.Core.Services
         }
 
         /// <summary>
-        /// 检测特定技能的实时状态
+        /// 并行更新技能状态（由引擎调用）
         /// </summary>
-        /// <param name="skill">技能运行时状态</param>
-        /// <returns>是否真正可用（基于图像识别和前置条件）</returns>
-        public bool IsSkillReady(SkillRuntimeState skill)
+        public void UpdateSkillStateVisually(SkillRuntimeState skill, Mat currentFrame)
         {
             try
             {
-                // 1. 逻辑保底检查：如果逻辑冷却还没到，且视觉识别未启用，则直接返回不可用
-                // 注意：如果用户要求完全靠视觉，这里可以放宽
-                if (!skill.IsAvailable && !_config.AppSettings.EnableSmartMode) return false;
-
-                // 2. 游戏状态检查（HP/MP/目标/Buff）
-                var gameState = _stateMonitor.DetectGameState();
-                
-                // HP/MP 检查
-                if (gameState.HpPercentage < skill.Config.MinHp) return false;
-                if (gameState.MpPercentage < skill.Config.MinMp) return false;
-                
-                // 目标检查
-                if (skill.Config.RequireTarget && !gameState.HasTarget) return false;
-
-                // Buff 检查
-                if (!CheckBuffConditions(skill.Config, gameState)) return false;
-
-                // 3. 视觉识别检查
-                if (_config.AppSettings.EnableSmartMode)
+                var region = skill.Config.IconRegion;
+                if (region == null || region.Length < 4 || region[2] <= 0 || region[3] <= 0)
                 {
-                    return CheckSkillVisually(skill);
+                    skill.IsVisuallyReady = true;
+                    return;
                 }
 
-                return true;
+                // 从当前帧裁剪出技能图标区域
+                using var iconMat = new Mat(currentFrame, new Rect(region[0], region[1], region[2], region[3]));
+                
+                // 1. 模板匹配
+                if (!string.IsNullOrEmpty(skill.Config.TemplatePath) && System.IO.File.Exists(skill.Config.TemplatePath))
+                {
+                    using var template = Cv2.ImRead(skill.Config.TemplatePath);
+                    if (template != null && !template.Empty())
+                    {
+                        skill.IsVisuallyReady = CheckIconByTemplate(iconMat, template, skill.Config.SimilarityThreshold);
+                        return;
+                    }
+                }
+
+                // 2. 亮度检测
+                skill.IsVisuallyReady = IsIconBright(iconMat);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[SkillStateDetector] 检测技能 {skill.Config.Name} 状态失败: {ex.Message}");
-                return skill.IsAvailable;
+                skill.IsVisuallyReady = false;
             }
+        }
+
+        /// <summary>
+        /// 检测特定技能的实时状态
+        /// </summary>
+        public bool IsSkillReady(SkillRuntimeState skill)
+        {
+            // 逻辑保底检查
+            if (!skill.IsAvailable && !_config.AppSettings.EnableSmartMode) return false;
+
+            // 视觉识别检查 (现在由引擎并行更新)
+            if (_config.AppSettings.EnableSmartMode)
+            {
+                return skill.IsVisuallyReady;
+            }
+
+            return true;
         }
 
         /// <summary>

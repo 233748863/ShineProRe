@@ -72,6 +72,7 @@ namespace ShineProCS.ViewModels
 
             // 初始化配置数据
             _skills = new ObservableCollection<SkillConfig>(_config.Skills);
+            _selectedSkill = _skills.FirstOrDefault();
             _appSettings = _config.AppSettings;
 
             // 初始化状态定时器（每 500ms 更新一次 UI）

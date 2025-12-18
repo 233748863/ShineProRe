@@ -17,5 +17,10 @@ namespace ShineProCS.Core.Interfaces
         /// <param name="height">高度</param>
         /// <returns>OpenCV 格式的图像（Mat 对象），失败返回 null</returns>
         Mat? GetScreenRegion(int x, int y, int width, int height);
+
+        /// <summary>
+        /// 归还图像对象到池中（可选实现）
+        /// </summary>
+        void ReturnMat(Mat mat);
     }
 }

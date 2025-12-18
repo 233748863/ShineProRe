@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Collections;
+using OpenCvSharp;
 using ShineProCS.Core.Interfaces;
 using ShineProCS.Core.Services;
 using ShineProCS.Core.Strategies;
@@ -35,6 +39,14 @@ namespace ShineProCS.Core.Engine
         private bool _isPaused;
         private CancellationTokenSource? _cts;
         private Task? _loopTask;
+        private Task? _captureTask;
+
+        // ===== 生产者-消费者模型 =====
+        private readonly BlockingCollection<Mat> _imageQueue = new(new ConcurrentQueue<Mat>(), 2);
+        private byte[]? _lastFrameHash;
+
+        // ===== UI 遮罩 =====
+        private Views.OverlayWindow? _overlay;
 
         // ===== 技能状态管理 =====
         private List<SkillRuntimeState> _skillStates;
@@ -102,8 +114,19 @@ namespace ShineProCS.Core.Engine
             _isPaused = false;
             _perfMonitor.Reset();
 
+            // 启动截屏任务 (生产者)
+            _captureTask = Task.Run(() => CaptureLoop(_cts.Token), _cts.Token);
+            // 启动处理任务 (消费者)
             _loopTask = Task.Run(() => MainLoop(_cts.Token), _cts.Token);
-            Console.WriteLine("✅ 引擎已启动（高级模式）");
+
+            // 启动 Overlay
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                _overlay = new Views.OverlayWindow();
+                _overlay.Show();
+            });
+            
+            Console.WriteLine("✅ 引擎已启动（高级模式：异步截屏 + 并行检测 + UI遮罩）");
         }
 
         public void Stop()
@@ -111,14 +134,49 @@ namespace ShineProCS.Core.Engine
             if (!_isRunning) return;
 
             _cts?.Cancel();
-            _loopTask?.Wait(TimeSpan.FromSeconds(5));
+            Task.WaitAll(new[] { _loopTask, _captureTask }.Where(t => t != null).ToArray()!, TimeSpan.FromSeconds(5));
+            
+            // 关闭 Overlay
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                _overlay?.Close();
+                _overlay = null;
+            });
+
+            // 清理队列
+            while (_imageQueue.TryTake(out var mat)) _image.ReturnMat(mat);
+
             _cts?.Dispose();
             _cts = null;
             _loopTask = null;
+            _captureTask = null;
             _isRunning = false;
             _isPaused = false;
 
             Console.WriteLine("⏹️ 引擎已停止");
+        }
+
+        private void CaptureLoop(CancellationToken token)
+        {
+            var region = _config.GetDetectionRegion();
+            while (!token.IsCancellationRequested)
+            {
+                if (_isPaused)
+                {
+                    Thread.Sleep(100);
+                    continue;
+                }
+
+                var mat = _image.GetScreenRegion(region[0], region[1], region[2], region[3]);
+                if (mat != null)
+                {
+                    if (!_imageQueue.TryAdd(mat, 100, token))
+                    {
+                        _image.ReturnMat(mat); // 队列满则丢弃并归还
+                    }
+                }
+                Thread.Sleep(10); // 限制截屏频率
+            }
         }
 
         public void Pause()
@@ -154,31 +212,44 @@ namespace ShineProCS.Core.Engine
                         continue;
                     }
 
-                    // ===== 性能监控：开始操作 =====
-                    _perfMonitor.StartOperation();
+                    // 从队列获取最新图像
+                    if (!_imageQueue.TryTake(out var currentFrame, 500, cancellationToken))
+                        continue;
 
-                    // ===== 内存管理：定期检查 =====
-                    if (_perfMonitor.GetMetrics().TotalExecutions % 100 == 0)
+                    using (currentFrame)
                     {
-                        if (_memMonitor.IsMemoryHigh(300))
+                        // ===== 脏矩形检测：对比哈希 =====
+                        if (IsFrameUnchanged(currentFrame))
                         {
-                            Console.WriteLine("[Engine] 内存占用过高，触发清理...");
-                            _memMonitor.ForceCleanup();
+                            _image.ReturnMat(currentFrame);
+                            Thread.Sleep(_adaptiveDelay.CurrentDelay * 2); // 画面无变化，拉长间隔
+                            continue;
                         }
+
+                        // ===== 性能监控：开始操作 =====
+                        _perfMonitor.StartOperation();
+
+                        // ===== 核心逻辑：执行技能循环 =====
+                        bool success = ExecuteSkillCycle(currentFrame);
+
+                        // 更新 Overlay (每 5 次循环更新一次，平衡性能)
+                        if (_perfMonitor.GetMetrics().TotalExecutions % 5 == 0)
+                        {
+                            UpdateOverlay();
+                        }
+
+                        // ===== 性能监控：结束操作 =====
+                        _perfMonitor.EndOperation(success);
+
+                        // ===== 自适应延迟：动态调整 =====
+                        _adaptiveDelay.Adjust(_perfMonitor.GetMetrics().AverageResponseTime);
+
+                        _image.ReturnMat(currentFrame);
                     }
 
-                    // ===== 核心逻辑：执行技能循环 =====
-                    bool success = ExecuteSkillCycle();
-
-                    // ===== 性能监控：结束操作 =====
-                    _perfMonitor.EndOperation(success);
-
-                    // ===== 自适应延迟：动态调整 =====
-                    _adaptiveDelay.Adjust(_perfMonitor.GetMetrics().AverageResponseTime);
-
-                    // 循环间隔
                     Thread.Sleep(_adaptiveDelay.CurrentDelay);
                 }
+                catch (OperationCanceledException) { break; }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"❌ 循环异常: {ex.Message}");
@@ -187,9 +258,40 @@ namespace ShineProCS.Core.Engine
             }
         }
 
-        private bool ExecuteSkillCycle()
+        private bool IsFrameUnchanged(Mat frame)
         {
-            // 1. 构造策略上下文
+            // 简单哈希对比（取缩略图哈希以提高速度）
+            using var small = new Mat();
+            Cv2.Resize(frame, small, new OpenCvSharp.Size(8, 8));
+            var currentHash = small.ToBytes();
+            
+            if (_lastFrameHash != null && StructuralComparisons.StructuralEqualityComparer.Equals(_lastFrameHash, currentHash))
+            {
+                return true;
+            }
+            _lastFrameHash = currentHash;
+            return false;
+        }
+
+        private void UpdateOverlay()
+        {
+            if (_overlay == null) return;
+            var regions = _skillStates
+                .Where(s => s.Config.Enabled && s.Config.IconRegion != null && s.Config.IconRegion.Length == 4)
+                .Select(s => (s.Config.IconRegion, s.Config.Name, s.IsVisuallyReady))
+                .ToList();
+            _overlay.UpdateRegions(regions);
+        }
+
+        private bool ExecuteSkillCycle(Mat currentFrame)
+        {
+            // 1. 并行检测所有技能状态 (充分利用多核)
+            Parallel.ForEach(_skillStates, state => 
+            {
+                _skillDetector.UpdateSkillStateVisually(state, currentFrame);
+            });
+
+            // 2. 构造策略上下文
             var context = new StrategyContext
             {
                 SkillStates = _skillStates,
@@ -197,48 +299,31 @@ namespace ShineProCS.Core.Engine
                 LoopMode = _config.AppSettings.EnableSmartMode ? "Smart" : "Default"
             };
 
-            // 2. 使用策略管理器获取下一个技能
+            // 3. 使用策略管理器获取下一个技能
             var selectedSkill = _strategyManager.GetNextSkill(context);
 
             if (selectedSkill == null) return true;
 
-            // 3. 使用技能状态检测器进行二次确认（高级图像识别）
-            if (!_skillDetector.IsSkillReady(selectedSkill))
+            // 4. 防卡死逻辑：如果技能视觉上一直就绪但无法释放成功
+            if (selectedSkill.IsVisuallyReady)
             {
-                return false;
+                selectedSkill.ConsecutiveFailures++;
+                if (selectedSkill.ConsecutiveFailures >= 5)
+                {
+                    Console.WriteLine($"[Engine] 技能 {selectedSkill.Config.Name} 连续 5 次释放失败，触发防卡死重置 (ESC)");
+                    _keyboard.PressAndRelease(27); // VK_ESCAPE
+                    selectedSkill.ConsecutiveFailures = 0;
+                    return false;
+                }
             }
 
-            // 4. 执行按键模拟 (支持连招逻辑)
+            // 5. 执行按键模拟
             try
             {
-                // A. 检查并执行前置技能 (如：补 Buff)
-                if (!string.IsNullOrEmpty(selectedSkill.Config.PreCastConditionBuffName) && 
-                    selectedSkill.Config.PreCastKeyCode > 0)
-                {
-                    bool hasBuff = _skillDetector.CheckSpecificBuff(selectedSkill.Config.PreCastConditionBuffName);
-                    if (!hasBuff)
-                    {
-                        Console.WriteLine($"[Engine] 检测到 Buff {selectedSkill.Config.PreCastConditionBuffName} 缺失，触发前置技能 {selectedSkill.Config.PreCastKeyCode}");
-                        _keyboard.PressAndRelease(selectedSkill.Config.PreCastKeyCode);
-                        if (selectedSkill.Config.ComboDelay > 0) Thread.Sleep(selectedSkill.Config.ComboDelay);
-                    }
-                }
-
-                // B. 执行主技能
                 bool success = _keyboard.PressAndRelease(selectedSkill.Config.KeyCode);
-                
                 if (success)
                 {
                     selectedSkill.MarkAsUsed();
-
-                    // C. 执行后置技能 (如：取消 Buff)
-                    if (selectedSkill.Config.PostCastKeyCode > 0)
-                    {
-                        if (selectedSkill.Config.ComboDelay > 0) Thread.Sleep(selectedSkill.Config.ComboDelay);
-                        Console.WriteLine($"[Engine] 主技能释放成功，触发后置技能 {selectedSkill.Config.PostCastKeyCode}");
-                        _keyboard.PressAndRelease(selectedSkill.Config.PostCastKeyCode);
-                    }
-
                     return true;
                 }
             }

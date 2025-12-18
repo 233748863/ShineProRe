@@ -13,6 +13,8 @@ namespace ShineProCS.Infrastructure
     /// </summary>
     public class OpenCvImageInterface : IImageInterface
     {
+        private readonly MatPool _pool = new MatPool(5); // 预分配 5 个缓冲区
+
         /// <summary>
         /// 获取指定屏幕区域的图像
         /// </summary>
@@ -25,9 +27,8 @@ namespace ShineProCS.Infrastructure
                 using var graphics = Graphics.FromImage(bitmap);
                 graphics.CopyFromScreen(x, y, 0, 0, new System.Drawing.Size(width, height));
 
-                // ===== 第二步：将 Bitmap 转换为 OpenCV 的 Mat 格式 =====
-                // 手动转换 Bitmap 到 Mat
-                var mat = new Mat(height, width, MatType.CV_8UC3);
+                // ===== 第二步：从池中获取或创建 Mat =====
+                var mat = _pool.Rent(width, height);
                 
                 // 锁定 Bitmap 数据
                 var bitmapData = bitmap.LockBits(
@@ -65,6 +66,55 @@ namespace ShineProCS.Infrastructure
             {
                 Console.WriteLine($"截图失败: {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 归还 Mat 到池中
+        /// </summary>
+        public void ReturnMat(Mat mat)
+        {
+            _pool.Return(mat);
+        }
+
+        /// <summary>
+        /// 简单的 Mat 对象池实现
+        /// </summary>
+        private class MatPool
+        {
+            private readonly System.Collections.Concurrent.ConcurrentQueue<Mat> _pool = new();
+            private readonly int _maxSize;
+
+            public MatPool(int maxSize)
+            {
+                _maxSize = maxSize;
+            }
+
+            public Mat Rent(int width, int height)
+            {
+                if (_pool.TryDequeue(out var mat))
+                {
+                    // 如果大小不匹配，释放并重新创建
+                    if (mat.Width != width || mat.Height != height)
+                    {
+                        mat.Dispose();
+                        return new Mat(height, width, MatType.CV_8UC3);
+                    }
+                    return mat;
+                }
+                return new Mat(height, width, MatType.CV_8UC3);
+            }
+
+            public void Return(Mat mat)
+            {
+                if (_pool.Count < _maxSize)
+                {
+                    _pool.Enqueue(mat);
+                }
+                else
+                {
+                    mat.Dispose();
+                }
             }
         }
     }

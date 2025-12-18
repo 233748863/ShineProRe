@@ -56,6 +56,16 @@ namespace ShineProCS.Models
         }
 
         /// <summary>
+        /// 视觉上是否可用（由 SkillStateDetector 更新）
+        /// </summary>
+        public bool IsVisuallyReady { get; set; }
+
+        /// <summary>
+        /// 连续失败次数（用于防卡死逻辑）
+        /// </summary>
+        public int ConsecutiveFailures { get; set; }
+
+        /// <summary>
         /// 构造函数
         /// </summary>
         public SkillRuntimeState(SkillConfig config)
@@ -63,6 +73,8 @@ namespace ShineProCS.Models
             Config = config;
             // 初始化为很久以前，确保第一次可以立即使用
             LastUsedTime = DateTime.MinValue;
+            IsVisuallyReady = false;
+            ConsecutiveFailures = 0;
         }
 
         /// <summary>
@@ -72,6 +84,7 @@ namespace ShineProCS.Models
         public void MarkAsUsed()
         {
             LastUsedTime = DateTime.Now;
+            ConsecutiveFailures = 0; // 成功释放，重置失败计数
         }
     }
 }
