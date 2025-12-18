@@ -60,6 +60,12 @@ namespace ShineProCS.ViewModels
         [ObservableProperty]
         private AppSettings _appSettings;
 
+        [ObservableProperty]
+        private ObservableCollection<string> _availableProfiles;
+
+        [ObservableProperty]
+        private string _selectedProfile;
+
         /// <summary>
         /// 构造函数 - 依赖注入
         /// </summary>
@@ -74,6 +80,10 @@ namespace ShineProCS.ViewModels
             _skills = new ObservableCollection<SkillConfig>(_config.Skills);
             _selectedSkill = _skills.FirstOrDefault();
             _appSettings = _config.AppSettings;
+
+            // 初始化方案列表
+            _availableProfiles = new ObservableCollection<string>(_config.GetAvailableProfiles());
+            _selectedProfile = "skills";
 
             // 初始化状态定时器（每 500ms 更新一次 UI）
             _statusTimer = new DispatcherTimer
@@ -169,6 +179,37 @@ namespace ShineProCS.ViewModels
             // 保存到文件
             _config.SaveConfigs();
             StatusText = "配置已保存并生效";
+        }
+
+        [RelayCommand]
+        private void SwitchProfile(string? profileName)
+        {
+            if (string.IsNullOrEmpty(profileName)) return;
+            
+            Console.WriteLine($"[ViewModel] 正在切换方案到: {profileName}");
+            _config.LoadProfile(profileName);
+            
+            // 重新加载技能列表
+            Skills.Clear();
+            foreach (var skill in _config.Skills)
+            {
+                Skills.Add(skill);
+            }
+            SelectedSkill = Skills.FirstOrDefault();
+            
+            StatusText = $"已切换到方案: {profileName}";
+        }
+
+        [RelayCommand]
+        private void RefreshProfiles()
+        {
+            var profiles = _config.GetAvailableProfiles();
+            AvailableProfiles.Clear();
+            foreach (var p in profiles)
+            {
+                AvailableProfiles.Add(p);
+            }
+            StatusText = "方案列表已刷新";
         }
 
         // ===== 视觉助手命令 =====

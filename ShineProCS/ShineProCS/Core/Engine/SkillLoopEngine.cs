@@ -31,6 +31,7 @@ namespace ShineProCS.Core.Engine
         private readonly MemoryMonitor _memMonitor;
         private readonly StrategyManager _strategyManager;
         private readonly SkillStateDetector _skillDetector;
+        private readonly StateMonitor _stateMonitor;
         private readonly AdaptiveDelay _adaptiveDelay;
         private readonly ConfigWatcher _configWatcher;
 
@@ -61,7 +62,8 @@ namespace ShineProCS.Core.Engine
             PerformanceMonitor perfMonitor,
             MemoryMonitor memMonitor,
             StrategyManager strategyManager,
-            SkillStateDetector skillDetector)
+            SkillStateDetector skillDetector,
+            StateMonitor stateMonitor)
         {
             _keyboard = keyboard;
             _image = image;
@@ -70,6 +72,7 @@ namespace ShineProCS.Core.Engine
             _memMonitor = memMonitor;
             _strategyManager = strategyManager;
             _skillDetector = skillDetector;
+            _stateMonitor = stateMonitor;
 
             // 初始化技能状态列表
             _skillStates = new List<SkillRuntimeState>();
@@ -231,6 +234,12 @@ namespace ShineProCS.Core.Engine
 
                         // ===== 核心逻辑：执行技能循环 =====
                         bool success = ExecuteSkillCycle(currentFrame);
+
+                        // 每 10 次循环检测一次战斗状态 (平衡性能)
+                        if (_perfMonitor.GetMetrics().TotalExecutions % 10 == 0)
+                        {
+                            _adaptiveDelay.IsCombatMode = _stateMonitor.DetectCombatState();
+                        }
 
                         // 更新 Overlay (每 5 次循环更新一次，平衡性能)
                         if (_perfMonitor.GetMetrics().TotalExecutions % 5 == 0)

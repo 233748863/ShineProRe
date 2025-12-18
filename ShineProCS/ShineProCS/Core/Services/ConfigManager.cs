@@ -19,7 +19,7 @@ namespace ShineProCS.Core.Services
         // ===== 配置文件路径 =====
         private readonly string _configPath;
         private readonly string _appSettingsPath;
-        private readonly string _skillsPath;
+        private string _skillsPath;
 
         // ===== 配置对象 =====
         private AppSettings? _appSettings;
@@ -41,6 +41,45 @@ namespace ShineProCS.Core.Services
                 Directory.CreateDirectory(configPath);
                 Console.WriteLine($"已创建配置目录: {configPath}");
             }
+        }
+
+        /// <summary>
+        /// 获取所有可用的技能配置方案
+        /// </summary>
+        public List<string> GetAvailableProfiles()
+        {
+            var profiles = new List<string> { "skills" }; // 默认主配置
+            try
+            {
+                var files = Directory.GetFiles(_configPath, "skills_*.json");
+                foreach (var file in files)
+                {
+                    var name = Path.GetFileNameWithoutExtension(file).Replace("skills_", "");
+                    profiles.Add(name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConfigManager] 扫描方案失败: {ex.Message}");
+            }
+            return profiles;
+        }
+
+        /// <summary>
+        /// 加载指定的配置方案
+        /// </summary>
+        public void LoadProfile(string profileName)
+        {
+            if (profileName == "skills")
+            {
+                _skillsPath = Path.Combine(_configPath, "skills.json");
+            }
+            else
+            {
+                _skillsPath = Path.Combine(_configPath, "skills_" + profileName + ".json");
+            }
+            
+            LoadConfigs();
         }
 
         /// <summary>

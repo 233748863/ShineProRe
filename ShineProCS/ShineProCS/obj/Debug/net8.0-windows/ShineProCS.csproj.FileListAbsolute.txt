@@ -175,3 +175,4 @@ E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\vi-VN\ModernWpf.Con
 E:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\vi-VN\ModernWpf.resources.dll
 E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\OverlayWindow.baml
 E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\Views\OverlayWindow.g.cs
+e:\ShineProRe\ShineProCS\ShineProCS\bin\Debug\net8.0-windows\Microsoft.Xaml.Behaviors.dll

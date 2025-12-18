@@ -60,6 +60,28 @@ namespace ShineProCS.Core.Services
         }
 
         /// <summary>
+        /// 检测是否处于战斗状态
+        /// </summary>
+        public bool DetectCombatState()
+        {
+            try
+            {
+                // 方案 1：如果有选中的目标，通常认为处于战斗状态
+                if (DetectTarget(out _)) return true;
+
+                // 方案 2：检测特定位置的“战斗图标” (需要配置)
+                // var combatIconRegion = _config.GetCombatIconRegion();
+                // if (combatIconRegion != null) { ... }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// 检测 HP 百分比
         /// 
         /// 【检测原理】

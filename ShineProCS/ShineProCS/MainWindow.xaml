@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:hc="https://handyorg.github.io/handycontrol"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:local="clr-namespace:ShineProCS"
         mc:Ignorable="d"
         x:Name="RootWindow"
@@ -175,6 +176,28 @@
                                     <TextBlock Text="技能执行流程" Style="{DynamicResource SubtitleTextBlockStyle}" FontSize="18"/>
                                     <TextBlock Text="优先级：从上至下扫描" Style="{DynamicResource CaptionTextBlockStyle}" 
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0"/>
+                                    
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                         <ComboBox ItemsSource="{Binding AvailableProfiles}" 
+                                                  SelectedItem="{Binding SelectedProfile}"
+                                                  ui:ControlHelper.Header="当前方案"
+                                                  HorizontalAlignment="Stretch">
+                                            <i:Interaction.Triggers>
+                                                <i:EventTrigger EventName="SelectionChanged">
+                                                    <i:InvokeCommandAction Command="{Binding SwitchProfileCommand}" 
+                                                                           CommandParameter="{Binding SelectedProfile}"/>
+                                                </i:EventTrigger>
+                                            </i:Interaction.Triggers>
+                                        </ComboBox>
+                                        <Button Grid.Column="1" VerticalAlignment="Bottom" Margin="4,0,0,0" Height="32"
+                                                ToolTip="刷新方案列表" Command="{Binding RefreshProfilesCommand}">
+                                            <ui:SymbolIcon Symbol="Refresh"/>
+                                        </Button>
+                                    </Grid>
                                 </StackPanel>
                                 
                                 <StackPanel DockPanel.Dock="Bottom" Margin="8">

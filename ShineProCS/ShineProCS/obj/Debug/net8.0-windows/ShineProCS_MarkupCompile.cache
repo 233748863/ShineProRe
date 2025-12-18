@@ -4,16 +4,16 @@
 winexe
 C#
 .cs
-E:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\
+e:\ShineProRe\ShineProCS\ShineProCS\obj\Debug\net8.0-windows\
 ShineProCS
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
-E:\ShineProRe\ShineProCS\ShineProCS\App.xaml
+e:\ShineProRe\ShineProCS\ShineProCS\App.xaml
 31034941965
 
 301154615364
-223-55047611
+224-1207635631
 MainWindow.xaml;Views\OverlayWindow.xaml;Views\RegionSelectorWindow.xaml;
 
 False

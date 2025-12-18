@@ -18,6 +18,11 @@ namespace ShineProCS.Utils
         private int _currentDelay;
 
         /// <summary>
+        /// 是否处于战斗模式（战斗模式下响应更激进）
+        /// </summary>
+        public bool IsCombatMode { get; set; }
+
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="baseDelay">基础延迟（毫秒）</param>
@@ -42,16 +47,20 @@ namespace ShineProCS.Utils
         /// <param name="targetResponseTime">目标响应时间（秒，默认 0.1s）</param>
         public void Adjust(double avgResponseTime, double targetResponseTime = 0.1)
         {
+            // 战斗模式下，目标响应时间减半，且最小延迟允许更低
+            double effectiveTarget = IsCombatMode ? targetResponseTime * 0.5 : targetResponseTime;
+            int effectiveMin = IsCombatMode ? Math.Max(20, _minDelay / 2) : _minDelay;
+
             // 简单的自适应逻辑：
             // 如果响应时间超过目标的 1.5 倍，增加 10% 的延迟
-            if (avgResponseTime > targetResponseTime * 1.5)
+            if (avgResponseTime > effectiveTarget * 1.5)
             {
                 _currentDelay = (int)Math.Min(_maxDelay, _currentDelay * 1.1);
             }
             // 如果响应时间低于目标的 0.5 倍，减小 5% 的延迟
-            else if (avgResponseTime < targetResponseTime * 0.5)
+            else if (avgResponseTime < effectiveTarget * 0.5)
             {
-                _currentDelay = (int)Math.Max(_minDelay, _currentDelay * 0.95);
+                _currentDelay = (int)Math.Max(effectiveMin, _currentDelay * 0.95);
             }
         }
 
